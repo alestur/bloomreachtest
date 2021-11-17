@@ -1,0 +1,28 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.develop
+    environment:
+      - DEBUG=1
+      - HOME=/tmp
+      - REMOTE_URL=http://mock:8080
+      - REQ_TIMEOUT=5
+      - REQ_LIMIT=100
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - TEST_URL=http://localhost:8000
+    user: ${USER_ID:-1000}:${GROUP_ID:-1000}
+    ports:
+      - "8000:8000"
+    volumes:
+       - .:/opt/app
+    depends_on:
+      - mock
+  mock:
+    build:
+      context: .
+      dockerfile: Dockerfile.mockserver
+    ports:
+      - "8080:8080"

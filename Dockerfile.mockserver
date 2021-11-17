@@ -1,0 +1,12 @@
+FROM python:3
+
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+WORKDIR /opt/app
+COPY ./tools/mockserver.py /opt/app/mockserver.py
+
+RUN pip3 install --upgrade pip
+RUN pip3 install aiohttp
+
+CMD ["python3", "mockserver.py"]

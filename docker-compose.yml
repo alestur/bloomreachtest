@@ -1,0 +1,14 @@
+version: '3'
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - DEBUG=0
+      - REMOTE_URL=https://exponea-engineering-assignment.appspot.com/api/work
+      - REQ_TIMEOUT=5
+      - REQ_LIMIT=100
+      - WORKERS=8
+    ports:
+      - "8000:8000"
