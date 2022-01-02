@@ -57,4 +57,4 @@ async def app_factory():
 
 
 if __name__ == '__main__':
-    web.run_app(app(), port=PORT_NUMBER)
+    web.run_app(app_factory(), port=PORT_NUMBER)
