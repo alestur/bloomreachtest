@@ -16,8 +16,7 @@ type TimeResponse struct {
 	MS int `json:"time"`
 }
 
-func FetchRemote(i int, wg *sync.WaitGroup, url string, ch chan<- TimeResponse) {
-	var err error
+func FetchRemote(i int, wg *sync.WaitGroup, url string, ch chan<- TimeResponse, clear chan struct{}) {
 	var s []byte
 	var t TimeResponse
 
@@ -27,26 +26,37 @@ func FetchRemote(i int, wg *sync.WaitGroup, url string, ch chan<- TimeResponse) 
 		time.Sleep(300 * time.Millisecond)
 	}
 
-	res, err := http.Get(url)
-
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%2d ERROR:\t%s\n", i, err)
+	select {
+	case <-clear:
 		return
+	default:
+		var err error
+
+		fmt.Println("Sending a request...")
+
+		res, err := http.Get(url)
+
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%2d ERROR:\t%s\n", i, err)
+			return
+		}
+
+		defer res.Body.Close()
+
+		if s, err = ioutil.ReadAll(res.Body); err != nil {
+			fmt.Fprintf(os.Stderr, "%2d READ ERROR:\t%s\n", i, err)
+			return
+		}
+
+		if err = json.Unmarshal(s, &t); err != nil {
+			fmt.Fprintf(os.Stderr, "%02d JSON ERROR:\t%s\n", i, err)
+			return
+		}
+
+		ch <- t
+		clear <- struct{}{}
+		clear <- struct{}{}
 	}
-
-	defer res.Body.Close()
-
-	if s, err = ioutil.ReadAll(res.Body); err != nil {
-		fmt.Fprintf(os.Stderr, "%2d READ ERROR:\t%s\n", i, err)
-		return
-	}
-
-	if err = json.Unmarshal(s, &t); err != nil {
-		fmt.Fprintf(os.Stderr, "%02d JSON ERROR:\t%s\n", i, err)
-		return
-	}
-
-	ch <- t
 }
 
 func main() {
@@ -66,6 +76,7 @@ func main() {
 
 	http.HandleFunc("/api/smart", func(w http.ResponseWriter, r *http.Request) {
 		ch := make(chan TimeResponse, n+2)
+		clear := make(chan struct{}, n)
 		var err error
 		isDone := false
 		t0 := time.Now()
@@ -89,7 +100,7 @@ func main() {
 
 		for i := 0; i < n; i++ {
 			wg.Add(1)
-			go FetchRemote(i, &wg, *url, ch)
+			go FetchRemote(i, &wg, *url, ch, clear)
 		}
 
 		// Force a HTTP response after the timeout period. TimeResponse.MS=-1 signals that the request has failed.

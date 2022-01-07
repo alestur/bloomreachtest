@@ -58,7 +58,7 @@ class ServerHandler:
         if request.match_info.get('timeout'):
             timeout = float(request.match_info.get('timeout')) / 1000.0
         else:
-            timeout = None
+            timeout = request.query.get('timeout')
 
         requests = 3
         pr_cnt = ProcCounter(requests)

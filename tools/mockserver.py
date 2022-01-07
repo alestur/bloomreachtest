@@ -11,15 +11,17 @@ class MockHandler:
     https://exponea-engineering-assignment.appspot.com/api/work
     for developnent and test purposes.
     """
+    scenario = []
+    requests = []
 
     def __init__(self):
-        self.requests = []
-        self.scenario = None
         self.start_time = time.perf_counter()
 
     async def handle_get(self, request):
-        if self.scenario and len(self.scenario) > len(self.requests):
-            body, status, delay = self.scenario[len(self.requests)]
+        if (self.__class__.scenario and len(self.__class__.scenario)
+            > len(self.__class__.requests)):
+            body, status, delay = \
+                self.__class__.scenario[len(self.__class__.requests)]
         else:
             delay = float(random.randint(100, 600))
             mode = random.randint(0, 10)
@@ -38,13 +40,15 @@ class MockHandler:
                 body = '{"time": %d}' % (delay)
                 status = 200
 
-        self.requests.append(time.perf_counter() - self.start_time)
+        self.__class__.requests.append(time.perf_counter() - self.start_time)
 
-        print('STATUS: {:d}\tUPTIME: {:0.4f}\t{:0.0f}\t{}'.format(
+        print('STATUS: {:d}\tUPTIME: {:0.4f}\t{:0.0f}\t{}\t{}\t{}'.format(
             status,
             time.perf_counter() - self.start_time,
             delay,
             body,
+            self.__class__.scenario,
+            len(self.__class__.requests),
         ))
         await asyncio.sleep(delay / 1000.0)
 
@@ -59,10 +63,11 @@ class MockHandler:
             raise web.HTTPInternalServerError()
 
     async def handle_requests(self, request):
-        return web.json_response(self.requests)
+        return web.json_response(self.__class__.requests)
 
     async def handle_scenario(self, request):
         data = await request.json()
+        print('Received a scenario: ', data)
         self.set_scenario(data)
 
         return web.Response(body='OK')
@@ -72,8 +77,8 @@ class MockHandler:
 
         :param scenario: a list of (body, status, delay) tuples
         """
-        self.requests = []
-        self.scenario = scenario
+        self.__class__.requests = []
+        self.__class__.scenario = scenario
         self.start_time = time.perf_counter()
 
 
