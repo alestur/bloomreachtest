@@ -13,7 +13,6 @@ services:
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
       - TEST_URL=http://localhost:8000/api/smart
-    user: ${USER_ID:-1000}:${GROUP_ID:-1000}
     ports:
       - "8000:8000"
     volumes:

@@ -62,7 +62,7 @@ func FetchRemote(i int, wg *sync.WaitGroup, url string, ch chan<- TimeResponse, 
 func main() {
 	var host = flag.String("host", "localhost", "Listening host")
 	maxRequests := 100
-	pendingRequest := 0
+	requestsSemaphore := make(chan struct{}, maxRequests)
 	var port = flag.Int("port", 8000, "Listening port")
 	var url = flag.String("url", "https://exponea-engineering-assignment.appspot.com/api/work", "Remote service url")
 
@@ -84,12 +84,13 @@ func main() {
 		var wg sync.WaitGroup
 
 		// Refuse to accept too many requests at once.
-		if pendingRequest > maxRequests {
+		select {
+		case requestsSemaphore <- struct{}{}:
+			defer func() { <-requestsSemaphore }()
+		default:
 			w.WriteHeader(http.StatusTooManyRequests)
 			return
 		}
-		pendingRequest++
-		defer func() { pendingRequest-- }()
 
 		query := r.URL.Query().Get("timeout")
 		if timeout, err = time.ParseDuration(fmt.Sprintf("%sms", query)); err != nil {

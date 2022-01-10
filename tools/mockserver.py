@@ -42,13 +42,11 @@ class MockHandler:
 
         self.__class__.requests.append(time.perf_counter() - self.start_time)
 
-        print('STATUS: {:d}\tUPTIME: {:0.4f}\t{:0.0f}\t{}\t{}\t{}'.format(
+        print('STATUS: {:d}\tUPTIME: {:0.4f}\t{:0.0f}\t{}'.format(
             status,
             time.perf_counter() - self.start_time,
             delay,
             body,
-            self.__class__.scenario,
-            len(self.__class__.requests),
         ))
         await asyncio.sleep(delay / 1000.0)
 
